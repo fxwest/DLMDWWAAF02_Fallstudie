@@ -20,7 +20,8 @@ class LidarViewer:
         self.vis.create_window(width=1280, height=720)
         opt = self.vis.get_render_option()
         opt.background_color = np.asarray([0, 0, 0])
-        self.vis.add_geometry(self.pc_frames[self.curr_frame].pcdXYZ)
+        for frame in self.pc_frames:
+            self.vis.add_geometry(frame[self.curr_frame])
 
         # --- Add the keyboard and camera callback functions to the visualizer
         self.vis.register_key_callback(256, self.exit_viewer)                                                            # Escape
@@ -56,6 +57,7 @@ class LidarViewer:
 
     def update_point_cloud(self):
         self.vis.clear_geometries()
-        self.vis.add_geometry(self.pc_frames[self.curr_frame].pcdXYZ)
+        for frame in self.pc_frames:
+            self.vis.add_geometry(frame[self.curr_frame])
         self.vis.poll_events()
         self.vis.update_renderer()

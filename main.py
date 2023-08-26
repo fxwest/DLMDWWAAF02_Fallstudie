@@ -3,13 +3,17 @@
 # -------------------------------
 import PointCloud as pc
 import PointCloudVisu as pcv
+import PointCloudProcessing as pcp
 
 
 # -------------------------------
-# -------- Hyperparameters ------
+# -------- Hyperparameter -------
 # -------------------------------
-NUM_MAX_FRAMES = 5
+NUM_MAX_FRAMES = 10
 PCD_FOLDER = r"C:\Users\Q554273\OneDrive - BMW Group\Selbststudium\_Master\LokalisierungBewegungsplanungFusion\Fallstudie\Data\2011_09_26_drive_0052_extract\2011_09_26\2011_09_26_drive_0052_extract\velodyne_points\data"
+TRIM_X_AXIS = [1.5, 150]
+TRIM_Y_AXIS = [-5, 5]
+TRIM_Z_AXIS = [-2.5, 3]                                                                                                 # Height of LiDAR is 1.73m
 
 
 # -------------------------------
@@ -17,7 +21,11 @@ PCD_FOLDER = r"C:\Users\Q554273\OneDrive - BMW Group\Selbststudium\_Master\Lokal
 # -------------------------------
 def main():
     raw_pc_trace = pc.PointCloudTrace(PCD_FOLDER, NUM_MAX_FRAMES)
-    lidar_viewer = pcv.LidarViewer(raw_pc_trace.raw_pc_frame_list, raw_pc_trace.num_frames, raw_pc_trace.num_max_frames)
+    trimmed_pc_frame_list = pcp.trim_fov(raw_pc_trace.raw_pc_frame_list, TRIM_X_AXIS, TRIM_Y_AXIS, TRIM_Z_AXIS)
+    ground_pc_frame_list, outlier_pc_frame_list = pcp.get_ground_plane_ransac(trimmed_pc_frame_list, distance_threshold=0.05)
+    clustered_pc_frame_list = pcp.get_clusters_dbscan(outlier_pc_frame_list, eps=0.9, min_points=15)
+    pc_frames = [ground_pc_frame_list, clustered_pc_frame_list]
+    pcv.LidarViewer(pc_frames, raw_pc_trace.num_frames, raw_pc_trace.num_max_frames)
 
 
 # -------------------------------

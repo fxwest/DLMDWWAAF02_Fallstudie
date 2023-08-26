@@ -59,6 +59,6 @@ class RawPointCloudFrame(PointCloudFrame):
     """
     def __init__(self, data_frame, frame_idx):
         super().__init__(data_frame, frame_idx)
-        rawPointCloud = (data_frame[:, 0:3])
+        raw_pc = (data_frame[:, 0:3])
         self.refl = data_frame[:, 3]
-        self.pcdXYZ.points = o3d.utility.Vector3dVector(rawPointCloud)
+        self.pcdXYZ.points = o3d.utility.Vector3dVector(raw_pc)
