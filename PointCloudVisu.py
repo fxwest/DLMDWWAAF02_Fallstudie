@@ -9,8 +9,9 @@ import open3d as o3d
 # -------- LiDAR Viewer ---------
 # -------------------------------
 class LidarViewer:
-    def __init__(self, pc_frames, num_frames, num_max_frames):
+    def __init__(self, pc_frames, num_frames, num_max_frames, bb_frames=None):
         self.pc_frames = pc_frames
+        self.bb_frames = bb_frames
         self.num_frames = num_frames
         self.num_max_frames = num_max_frames
         self.curr_frame = 0
@@ -20,8 +21,11 @@ class LidarViewer:
         self.vis.create_window(width=1280, height=720)
         opt = self.vis.get_render_option()
         opt.background_color = np.asarray([0, 0, 0])
-        for frame in self.pc_frames:
-            self.vis.add_geometry(frame[self.curr_frame])
+        for point_cloud in self.pc_frames:
+            self.vis.add_geometry(point_cloud[self.curr_frame])
+        if self.bb_frames:
+            for bounding_box in self.bb_frames[self.curr_frame]:
+                self.vis.add_geometry(bounding_box)
 
         # --- Add the keyboard and camera callback functions to the visualizer
         self.vis.register_key_callback(256, self.exit_viewer)                                                            # Escape
@@ -59,5 +63,8 @@ class LidarViewer:
         self.vis.clear_geometries()
         for frame in self.pc_frames:
             self.vis.add_geometry(frame[self.curr_frame])
+        if self.bb_frames:
+            for bounding_box in self.bb_frames[self.curr_frame]:
+                self.vis.add_geometry(bounding_box)
         self.vis.poll_events()
         self.vis.update_renderer()

@@ -13,6 +13,7 @@ from sklearn.cluster import DBSCAN
 GROUND_COLOR = [0.8, 0.8, 0.8]
 OUTLIER_COLOR = [1.0, 0, 0]
 NOISE_COLOR = [0.5, 0.5, 0.5]
+BOUNDING_BOX_COLOR = [0, 1, 0]
 
 
 # -------------------------------
@@ -70,9 +71,40 @@ def get_clusters_dbscan(pc_frames, eps=0.1, min_points=10):
         print(f"Frame {idx +1} has {max_label + 1} Clusters")
         colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
         filtered_colors = colors.copy()
-        for idx, point in enumerate(colors[labels < 0]):
+        for idx, point in enumerate(colors[labels < 0]):                                                                # Noise is labeled with -1
             point[:3] = NOISE_COLOR
             filtered_colors[idx] = point
         frame.colors = o3d.utility.Vector3dVector(filtered_colors[:, :3])
 
-    return clustered_pc_frames
+    return clustered_pc_frames, labels
+
+
+def get_bounding_boxes(pc_frames, dbscan_labels, min_points=10, max_points=100, max_x_size=20, max_y_size=5, max_z_size=10):
+    bb_frames = []
+    for frame in pc_frames:
+        bounding_boxes = []
+        pc_array = np.asarray(frame.points)
+
+        for label in np.unique(dbscan_labels):
+            if label == -1:
+                continue                                                                                                # Skip Noise
+
+            cluster_indices = np.where(dbscan_labels == label)[0]
+            cluster_points = pc_array[cluster_indices]
+
+            if len(cluster_points) < min_points or len(cluster_points) > max_points:                                    # Check min and max points inside BB
+                continue
+
+            min_coords = np.min(cluster_points, axis=0)
+            max_coords = np.max(cluster_points, axis=0)
+
+            if max_coords[0] - min_coords[0] <= max_x_size and \
+               max_coords[1] - min_coords[1] <= max_y_size and \
+               max_coords[2] - min_coords[2] <= max_z_size:                                                             # Check if BB size logical
+                bounding_box = o3d.geometry.AxisAlignedBoundingBox(min_coords, max_coords)
+                bounding_box.color = BOUNDING_BOX_COLOR
+                bounding_boxes.append(bounding_box)
+
+        bb_frames.append(bounding_boxes)
+
+    return bb_frames
