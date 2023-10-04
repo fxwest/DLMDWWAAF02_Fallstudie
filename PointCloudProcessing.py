@@ -39,7 +39,7 @@ def trim_fov(pc_frames, x_axis, y_axis, z_axis):
 # -------------------------------
 # ----------- RANSAC ------------
 # -------------------------------
-def get_ground_plane_ransac(pc_frames, distance_threshold=0.01, ransac_n=3, num_iterations=1000):
+def get_ground_plane_ransac(pc_frames, distance_threshold=0.01, ransac_n=5, num_iterations=100):
     ground_pc_frame_list = []
     outlier_pc_frame_list = []
     print(f"Starting Ground Segmentation with RANSAC")
@@ -61,6 +61,7 @@ def get_ground_plane_ransac(pc_frames, distance_threshold=0.01, ransac_n=3, num_
 
 def get_clusters_dbscan(pc_frames, eps=0.1, min_points=10):
     print(f"Starting Clustering with DBSCAN")
+    labels_frame_list = []
     clustered_pc_frames = pc_frames
     for idx, frame in enumerate(clustered_pc_frames):
         pc_array = np.asarray(frame.points)
@@ -69,22 +70,24 @@ def get_clusters_dbscan(pc_frames, eps=0.1, min_points=10):
 
         max_label = labels.max()
         print(f"Frame {idx +1} has {max_label + 1} Clusters")
-        colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
+        colors = plt.get_cmap("tab10")(labels / (max_label if max_label > 0 else 1))
         filtered_colors = colors.copy()
         for idx, point in enumerate(colors[labels < 0]):                                                                # Noise is labeled with -1
             point[:3] = NOISE_COLOR
             filtered_colors[idx] = point
         frame.colors = o3d.utility.Vector3dVector(filtered_colors[:, :3])
+        labels_frame_list.append(labels)
 
-    return clustered_pc_frames, labels
+    return clustered_pc_frames, labels_frame_list
 
 
-def get_bounding_boxes(pc_frames, dbscan_labels, min_points=10, max_points=100, max_x_size=20, max_y_size=5, max_z_size=10):
+def get_bounding_boxes(pc_frames, dbscan_labels_frame_list, min_points=10, max_points=100, max_x_size=20, max_y_size=5, max_z_size=10):
     bb_frames = []
-    for frame in pc_frames:
+    for idx, frame in enumerate(pc_frames):
         bounding_boxes = []
         pc_array = np.asarray(frame.points)
 
+        dbscan_labels = dbscan_labels_frame_list[idx]
         for label in np.unique(dbscan_labels):
             if label == -1:
                 continue                                                                                                # Skip Noise

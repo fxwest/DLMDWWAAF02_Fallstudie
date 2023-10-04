@@ -22,11 +22,10 @@ TRIM_Z_AXIS = [-2.5, 3]                                                         
 def main():
     raw_pc_trace = pc.PointCloudTrace(PCD_FOLDER, NUM_MAX_FRAMES)
     trimmed_pc_frame_list = pcp.trim_fov(raw_pc_trace.raw_pc_frame_list, TRIM_X_AXIS, TRIM_Y_AXIS, TRIM_Z_AXIS)
-    ground_pc_frame_list, outlier_pc_frame_list = pcp.get_ground_plane_ransac(trimmed_pc_frame_list, distance_threshold=0.05)
-    clustered_pc_frame_list, dbscan_labels = pcp.get_clusters_dbscan(outlier_pc_frame_list, eps=0.9, min_points=15)
-    bounding_boxes_frame_list = pcp.get_bounding_boxes(clustered_pc_frame_list, dbscan_labels, min_points=20, max_points=50000, max_x_size=20, max_y_size=10, max_z_size=10)
+    ground_pc_frame_list, outlier_pc_frame_list = pcp.get_ground_plane_ransac(trimmed_pc_frame_list, distance_threshold=0.3)
+    clustered_pc_frame_list, dbscan_labels_frame_list = pcp.get_clusters_dbscan(outlier_pc_frame_list, eps=0.9, min_points=15)
+    bounding_boxes_frame_list = pcp.get_bounding_boxes(clustered_pc_frame_list, dbscan_labels_frame_list, min_points=50, max_points=20000, max_x_size=20, max_y_size=5, max_z_size=5)
     pc_frames = [ground_pc_frame_list, clustered_pc_frame_list]
-    #pc_frames = [[frame.pcdXYZ for frame in raw_pc_trace.raw_pc_frame_list]]
     pcv.LidarViewer(pc_frames, raw_pc_trace.num_frames, raw_pc_trace.num_max_frames, bounding_boxes_frame_list)
 
 
